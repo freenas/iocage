@@ -465,6 +465,7 @@ class IOCStart(object):
                     addr = f"{ip4_addr}/{maskcidr}"
                 except su.CalledProcessError:
                     failed_dhcp = True
+                    addr = "ERROR, check jail logs"
 
                     if "0.0.0.0" in addr:
                         failed_dhcp = True
