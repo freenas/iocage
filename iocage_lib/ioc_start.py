@@ -465,6 +465,7 @@ class IOCStart(object):
                     addr = f"{ip4_addr}/{maskcidr}"
                 except su.CalledProcessError:
                     failed_dhcp = True
+                    addr = "ERROR, check jail logs"
 
                     if "0.0.0.0" in addr:
                         failed_dhcp = True
@@ -1003,6 +1004,7 @@ class IOCStart(object):
                 default_if = self.get('vnet_default_interface')
                 if default_if == 'none':
                     default_if = self.get_default_gateway()[1]
+
                 bridge_cmd = [
                     "ifconfig", bridge, "create", "addm", default_if
                 ]
@@ -1015,7 +1017,6 @@ class IOCStart(object):
             pass
 
         memberif = self.get_bridge_members(bridge)
-
         if not memberif:
             return '1500'
 
