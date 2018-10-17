@@ -592,9 +592,8 @@ fingerprint: {fingerprint}
                         skip=True, callback=self.callback,
                         su_env=plugin_env
                     ) as _exec:
-                        msg = _exec.exec_jail()
                         iocage_lib.ioc_common.consume_and_log(
-                            msg,
+                            _exec,
                             callback=self.callback
                         )
                 except iocage_lib.ioc_exceptions.CommandFailed as e:
@@ -932,11 +931,10 @@ fingerprint: {fingerprint}
                 path=f"{self.iocroot}/jails/{self.plugin}",
                 callback=self.callback
             ) as _exec:
-                output = _exec.exec_jail()
                 iocage_lib.ioc_common.consume_and_log(
-                    output,
+                    _exec,
                     callback=self.callback,
-                    silent=self.silent
+                    log=not(self.silent)
                 )
         except iocage_lib.ioc_exceptions.CommandFailed as e:
             self.__rollback_jail__(name="update")
@@ -1162,11 +1160,10 @@ fingerprint: {fingerprint}
                 skip=True,
                 callback=self.callback
             ) as _exec:
-                output = _exec.exec_jail()
                 iocage_lib.ioc_common.consume_and_log(
-                    output,
+                    _exec,
                     callback=self.callback,
-                    silent=self.silent
+                    log=not(self.silent)
                 )
         except iocage_lib.ioc_exceptions.CommandFailed as e:
             final_msg = 'An error occurred! Please read above'
@@ -1200,32 +1197,20 @@ fingerprint: {fingerprint}
                 snap.delete()
 
     def __stop_rc__(self):
-        with iocage_lib.ioc_exec.IOCExec(
+        iocage_lib.ioc_exec.SilentExec(
             command=["/bin/sh", "/etc/rc.shutdown"],
             uuid=self.plugin,
             path=f"{self.iocroot}/jails/{self.plugin}",
             callback=self.callback
-        ) as _exec:
-            output = _exec.exec_jail()
-            iocage_lib.ioc_common.consume_and_log(
-                output,
-                callback=self.callback,
-                silent=True
-            )
+        )
 
     def __start_rc__(self):
-        with iocage_lib.ioc_exec.IOCExec(
+        iocage_lib.ioc_exec.SilentExec(
             command=["/bin/sh", "/etc/rc"],
             uuid=self.plugin,
             path=f"{self.iocroot}/jails/{self.plugin}",
             callback=self.callback
-        ) as _exec:
-            output = _exec.exec_jail()
-            iocage_lib.ioc_common.consume_and_log(
-                output,
-                callback=self.callback,
-                silent=True
-            )
+        )
 
     def __check_manifest__(self, plugin_conf):
         """If the Major ABI changed, they cannot update anymore."""
