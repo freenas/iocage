@@ -22,10 +22,22 @@
 # IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Exception classes for iocage"""
+import collections
 
 
 class PoolNotActivated(Exception):
     pass
 
+
 class JailRunning(Exception):
     pass
+
+
+class CommandFailed(Exception):
+    """message attribute will be an iterable if a message is supplied"""
+    def __init__(self, message):
+        if not isinstance(message, collections.Iterable):
+            message = [message]
+
+        self.message = message
+        super().__init__(message)

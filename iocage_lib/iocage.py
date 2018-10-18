@@ -752,6 +752,7 @@ class IOCage(object):
              host_user="root",
              jail_user=None,
              console=False,
+             interactive=False,
              pkg=False,
              msg_return=False):
         """Executes a command in the jail as the supplied users."""
@@ -801,38 +802,84 @@ class IOCage(object):
 
             command = ["pkg", "-j", jid] + list(command)
 
-        msg, err = ioc_exec.IOCExec(
-            command,
-            uuid,
-            path,
-            host_user,
-            jail_user,
-            console=console,
-            silent=self.silent,
-            msg_return=msg_return,
-            pkg=pkg,
-            su_env=su_env).exec_jail()
+        if console:
+            status, jid = self.list("jid", uuid=uuid)
 
-        if not console:
-            if err:
+            if not status:
+                self.start()
+                status, jid = self.list("jid", uuid=uuid)
+
+            login_flags = self.get('login_flags').split()
+            exec_fib = self.get('exec_fib')
+            console_cmd = [
+                "/usr/sbin/setfib", exec_fib, "jexec", f"ioc-{uuid}",
+                "login"] + login_flags
+
+            su.Popen(console_cmd, env=su_env).communicate()
+            return
+
+        if interactive:
+            exec_fib = self.get('exec_fib')
+            interactive_cmd = (
+                "/usr/sbin/setfib", exec_fib, "jexec", f"ioc-{uuid}"
+                ) + command
+
+            try:
+                su_command = su.Popen(interactive_cmd, env=su_env)
+                stdout, stderr = su_command.communicate()
+
+                if su_command.returncode != 0:
+                    raise ioc_exceptions.CommandFailed(
+                        f'Command: {command}, stdout: {stdout},'
+                        f' stderr: {stderr}'
+                        )
+            except Exception as e:
+                raise
+            return
+
+        try:
+            with ioc_exec.IOCExec(
+                command,
+                uuid,
+                path,
+                host_user,
+                jail_user,
+                pkg=pkg,
+                su_env=su_env
+            ) as _exec:
+                msgs = ioc_common.consume_and_log(
+                    _exec
+                )
+
+                if msg_return:
+                    return msgs
+
+                for line in msgs:
+                    ioc_common.logit(
+                        {
+                            "level": "INFO",
+                            "message": line
+                        },
+                        _callback=self.callback,
+                        silent=self.silent)
+        except ioc_exceptions.CommandFailed as e:
+            msgs = [_msg.decode().rstrip() for _msg in e.message]
+            if msgs:
                 ioc_common.logit(
                     {
                         "level": "EXCEPTION",
-                        "message": err
+                        "message": '\n'.join(msgs)
                     },
                     _callback=self.callback,
                     silent=self.silent)
             else:
                 ioc_common.logit(
                     {
-                        "level": "INFO",
-                        "message": msg
+                        "level": "EXCEPTION",
+                        "message": f'Command: {command} failed!'
                     },
                     _callback=self.callback,
                     silent=self.silent)
-
-        if msg_return:
-            return msg
 
     def export(self):
         """Will export a jail"""
@@ -1064,7 +1111,7 @@ class IOCage(object):
                 if isinstance(props, dict):
                     return json.dumps(props, indent=4)
                 else:
-                    return props[0].decode("utf-8")
+                    return props
             elif prop == "all":
                 _props = {}
 
@@ -1726,12 +1773,21 @@ class IOCage(object):
         else:
             if jail_type == "pluginv2" or jail_type == "plugin":
                 # TODO: Warn about erasing all pkgs
-                ioc_plugin.IOCPlugin(plugin=uuid).update()
+                ioc_plugin.IOCPlugin(
+                    plugin=uuid,
+                    callback=self.callback
+                ).update()
             elif conf["basejail"] != "yes":
-                ioc_fetch.IOCFetch(release).fetch_update(True, uuid)
+                ioc_fetch.IOCFetch(
+                    release,
+                    callback=self.callback
+                ).fetch_update(True, uuid)
             else:
                 # Basejails only need their RELEASE updated
-                ioc_fetch.IOCFetch(release).fetch_update()
+                ioc_fetch.IOCFetch(
+                    release,
+                    callback=self.callback
+                ).fetch_update()
 
             if started:
                 self.silent = True

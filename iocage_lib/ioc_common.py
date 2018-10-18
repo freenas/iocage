@@ -770,3 +770,29 @@ def match_to_dir(iocroot, uuid, old_uuid=None):
         return matches[0]
     else:
         return None
+
+
+def consume_and_log(exec_gen, log=True, callback=None):
+    """
+    Consume a generator and massage the output with lines
+    """
+    final_output = ''
+    output_list = []
+
+    for stdout, _ in exec_gen:
+        final_output += stdout.decode()
+
+        if not final_output.endswith('\n'):
+            continue
+
+        output_list.append(final_output.rstrip())
+
+        if log:
+            logit({
+                "level": "INFO",
+                "message": final_output.rstrip()
+            },
+                _callback=callback)
+        final_output = ''
+
+    return output_list
