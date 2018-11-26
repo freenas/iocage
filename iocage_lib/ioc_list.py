@@ -54,21 +54,21 @@ class IOCList(object):
         self.sort = _sort
         self.silent = silent
         self.callback = callback
+        self.basejail_only = False if self.list_type != 'basejail' else True
         self.plugin = plugin
         self.quick = quick
 
     def list_datasets(self):
         """Lists the datasets of given type."""
-
-        if self.list_type == "all" or self.list_type == "uuid":
-            ds = self.zfs.get_dataset(f"{self.pool}/iocage/jails").children
-        elif self.list_type == "base":
+        if self.list_type == "base":
             ds = self.zfs.get_dataset(f"{self.pool}/iocage/releases").children
         elif self.list_type == "template":
             ds = self.zfs.get_dataset(
                 f"{self.pool}/iocage/templates").children
+        else:
+            ds = self.zfs.get_dataset(f"{self.pool}/iocage/jails").children
 
-        if self.list_type == "all":
+        if self.list_type == "all" or self.list_type == 'basejail':
             if self.quick:
                 _all = self.list_all_quick(ds)
             else:
@@ -133,6 +133,9 @@ class IOCList(object):
             dhcp = conf.get('dhcp', 'off')
             ip4 = ip4 if dhcp != 'on' else 'DHCP'
 
+            if self.basejail_only and conf.get('basejail', 'no') != 'yes':
+                continue
+
             jail_list.append([uuid, ip4])
 
         # return the list
@@ -183,6 +186,9 @@ class IOCList(object):
                 state = 'CORRUPT'
                 jid = '-'
 
+            if self.basejail_only and conf.get('basejail', 'no') != 'yes':
+                continue
+
             uuid_full = conf["host_hostuuid"]
             uuid = uuid_full
 
@@ -209,6 +215,7 @@ class IOCList(object):
             boot = conf["boot"]
             jail_type = conf["type"]
             full_release = conf["release"]
+            basejail = conf.get('basejail', 'no')
 
             if "HBSD" in full_release:
                 full_release = re.sub(r"\W\w.", "-", full_release)
@@ -300,8 +307,8 @@ class IOCList(object):
                                   admin_portal])
             elif self.full:
                 jail_list.append([jid, uuid, boot, state, jail_type,
-                                  full_release, full_ip4, ip6, template
-                                  ])
+                                  full_release, full_ip4, ip6, template,
+                                  basejail])
             else:
                 jail_list.append([jid, uuid, state, short_release, short_ip4])
 
@@ -331,10 +338,11 @@ class IOCList(object):
             else:
                 # We get an infinite float otherwise.
                 table.set_cols_dtype(["t", "t", "t", "t", "t", "t", "t", "t",
-                                      "t"])
+                                      "t", "t"])
 
                 jail_list.insert(0, ["JID", "NAME", "BOOT", "STATE", "TYPE",
-                                     "RELEASE", "IP4", "IP6", "TEMPLATE"])
+                                     "RELEASE", "IP4", "IP6", "TEMPLATE",
+                                     'BASEJAIL'])
         else:
             # We get an infinite float otherwise.
             table.set_cols_dtype(["t", "t", "t", "t", "t"])
