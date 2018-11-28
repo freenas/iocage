@@ -403,7 +403,12 @@ class IOCCreate(object):
 
         # Just "touch" the fstab file, since it won't exist and write
         # /etc/hosts
-        etc_hosts_ip_addr = config["ip4_addr"].split("|", 1)[-1]
+        try:
+            etc_hosts_ip_addr = config["ip4_addr"].split("|", 1)[-1].rsplit(
+                '/', 1)[0]
+        except KeyError:
+            # No ip4_addr specified during creation
+            pass
 
         try:
             jail_uuid_short = jail_uuid.rsplit(".")[-2]
@@ -413,8 +418,6 @@ class IOCCreate(object):
             # They supplied just a normal tag
             jail_uuid_short = jail_uuid
             jail_hostname = jail_uuid
-
-        final_line = f"{etc_hosts_ip_addr}\t{jail_hostname}\n"
 
         if self.empty:
             open(f"{location}/fstab", "wb").close()
@@ -444,8 +447,14 @@ class IOCCreate(object):
                     else:
                         # We want their IP to have the hostname at the end
 
-                        if config["ip4_addr"] != "none":
-                            etc_hosts.write(final_line)
+                        try:
+                            if config["ip4_addr"] != "none":
+                                final_line =\
+                                    f'{etc_hosts_ip_addr}\t{jail_hostname}\n'
+                                etc_hosts.write(final_line)
+                        except KeyError:
+                            # No ip4_addr specified during creation
+                            pass
         else:
             with open(clone_fstab, "r") as _clone_fstab:
                 with iocage_lib.ioc_common.open_atomic(
@@ -784,11 +793,11 @@ class IOCCreate(object):
 
         if rc_conf.is_file():
             su.Popen(["sysrc", "-R", f"{location}/root",
-                      f"host_hostname={host_hostname}"],
+                      f"hostname={host_hostname}"],
                      stdout=su.PIPE).communicate()
         else:
             rcconf = """\
-host_hostname="{hostname}"
+hostname="{hostname}"
 cron_flags="$cron_flags -J 15"
 
 # Disable Sendmail by default
