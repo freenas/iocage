@@ -63,7 +63,7 @@ def print_version(ctx, param, value):
 
     if not value or ctx.resilient_parsing:
         return
-    print("Version\t1.0 ALPHA 1")
+    print("Version\t1.0 RC 2018/11")
     sys.exit()
 
 
@@ -175,7 +175,7 @@ class IOCageCLI(click.MultiCommand):
             mod_name = mod.__name__.replace("iocage_cli.", "")
 
             try:
-                if mod.__rootcmd__ and "help" not in sys.argv[1:]:
+                if mod.__rootcmd__ and sys.argv[-1] not in ("help", "--help"):
                     if len(sys.argv) != 1:
                         if os.geteuid() != 0:
                             sys.exit("You need to have root privileges to"

@@ -119,6 +119,7 @@ class IOCStart(object):
         allow_mlock = self.conf["allow_mlock"]
         allow_mount = self.conf["allow_mount"]
         allow_mount_devfs = self.conf["allow_mount_devfs"]
+        allow_mount_fusefs = self.conf["allow_mount_fusefs"]
         allow_mount_nullfs = self.conf["allow_mount_nullfs"]
         allow_mount_procfs = self.conf["allow_mount_procfs"]
         allow_mount_tmpfs = self.conf["allow_mount_tmpfs"]
@@ -248,8 +249,10 @@ class IOCStart(object):
 
         if userland_version < 12.0:
             _allow_mlock = ""
+            _allow_mount_fusefs = ""
         else:
             _allow_mlock = f"allow.mlock={allow_mlock}"
+            _allow_mount_fusefs = f"allow.mount.fusefs={allow_mount_fusefs}"
 
         if self.conf["vnet"] == "off":
             ip4_addr = self.conf["ip4_addr"]
@@ -353,6 +356,7 @@ class IOCStart(object):
                            _allow_mlock,
                            f"allow.mount={allow_mount}",
                            f"allow.mount.devfs={allow_mount_devfs}",
+                           _allow_mount_fusefs,
                            f"allow.mount.nullfs={allow_mount_nullfs}",
                            f"allow.mount.procfs={allow_mount_procfs}",
                            tmpfs,
@@ -602,14 +606,15 @@ class IOCStart(object):
 
         vnet_default_interface = self.get('vnet_default_interface')
         if (
+                vnet_default_interface != 'auto' and
                 vnet_default_interface != 'none' and
                 vnet_default_interface not in netifaces.interfaces()
         ):
             # Let's not go into starting a vnet at all if the default
             # interface is supplied incorrectly
             return [
-                'Set property "vnet_default_interface" to "none" or a valid'
-                'interface e.g "lagg0"'
+                'Set property "vnet_default_interface" to "auto", "none" or a'
+                'valid interface e.g "lagg0"'
             ]
 
         for nic in nics:
@@ -692,7 +697,7 @@ class IOCStart(object):
         :return: If an error occurs it returns the error. Otherwise, it's None
         """
         vnet_default_interface = self.get('vnet_default_interface')
-        if vnet_default_interface == 'none':
+        if vnet_default_interface == 'auto':
             vnet_default_interface = self.get_default_gateway()[1]
 
         mac_a, mac_b = self.__start_generate_vnet_mac__(nic)
@@ -762,10 +767,11 @@ class IOCStart(object):
 
             try:
                 # Host interface as supplied by user also needs to be on the bridge
-                iocage_lib.ioc_common.checkoutput(
-                    ["ifconfig", bridge, "addm", vnet_default_interface],
-                    stderr=su.STDOUT
-                )
+                if vnet_default_interface != 'none':
+                    iocage_lib.ioc_common.checkoutput(
+                        ["ifconfig", bridge, "addm", vnet_default_interface],
+                        stderr=su.STDOUT
+                    )
             except su.CalledProcessError:
                 # Already exists
                 pass
@@ -963,16 +969,18 @@ class IOCStart(object):
             if dhcp == "on":
                 # Let's get the default vnet interface
                 default_if = self.get('vnet_default_interface')
-                if default_if == 'none':
+                if default_if == 'auto':
                     default_if = self.get_default_gateway()[1]
 
-                bridge_cmd = [
-                    "ifconfig", bridge, "create", "addm", default_if
-                ]
+                if default_if != 'none':
+                    bridge_cmd = [
+                        "ifconfig", bridge, "create", "addm", default_if
+                    ]
+                    su.check_call(bridge_cmd, stdout=su.PIPE, stderr=su.PIPE)
+
             else:
                 bridge_cmd = ["ifconfig", bridge, "create", "addm"]
-
-            su.check_call(bridge_cmd, stdout=su.PIPE, stderr=su.PIPE)
+                su.check_call(bridge_cmd, stdout=su.PIPE, stderr=su.PIPE)
         except su.CalledProcessError:
             # The bridge already exists, this is just best effort.
             pass

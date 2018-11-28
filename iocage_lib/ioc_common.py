@@ -714,6 +714,8 @@ def generate_devfs_ruleset(conf, paths=None, includes=None, callback=None,
         devfs_dict.update(paths)
 
     # We may end up setting all of these.
+    if conf['allow_mount_fusefs'] == '1':
+        devfs_dict['fuse'] = None
     if conf['bpf'] == 'yes':
         devfs_dict['bpf*'] = None
     if conf['allow_tun'] == '1':
