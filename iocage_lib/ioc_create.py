@@ -788,7 +788,7 @@ class IOCCreate(object):
                      stdout=su.PIPE).communicate()
         else:
             rcconf = """\
-host_hostname="{hostname}"
+hostname="{hostname}"
 cron_flags="$cron_flags -J 15"
 
 # Disable Sendmail by default
