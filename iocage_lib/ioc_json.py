@@ -83,8 +83,7 @@ class IOCConfiguration(IOCZFS):
         self.json_version = self.get_version()
         self.mac_prefix = self.get_mac_prefix()
         self.pool, self.iocroot = self.get_pool_and_iocroot()
-        if location:
-            self.default_config = self.check_default_config()
+        self.default_config = self.check_default_config()
 
     @staticmethod
     def get_version():
@@ -414,12 +413,16 @@ class IOCConfiguration(IOCZFS):
         if not freebsd_version.is_file():
             try:
                 if template == 'yes':
-                    freebsd_version = f'{self.iocroot}/templates/' \
+                    freebsd_version = pathlib.Path(
+                        f'{self.iocroot}/templates/'
                         f"{conf['host_hostuuid']}/root/bin/freebsd-version"
+                    )
                 else:
                     temp_uuid = self.location.rsplit('/', 1)[-1]
-                    freebsd_version = f'{self.iocroot}/jails/{temp_uuid}' \
+                    freebsd_version = pathlib.Path(
+                        f'{self.iocroot}/jails/{temp_uuid}' \
                         '/root/bin/freebsd-version'
+                    )
                 if not freebsd_version.is_file():
                     iocage_lib.ioc_common.logit(
                         {
