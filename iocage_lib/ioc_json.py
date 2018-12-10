@@ -370,7 +370,13 @@ class IOCConfiguration(IOCZFS):
 
         # Version 13 keys
         if not conf.get('vnet_default_interface'):
-            conf['vnet_default_interface'] = 'none'
+            conf['vnet_default_interface'] = 'auto'
+        else:
+            # Catch all users migrating from old prop value of none, which
+            # meant auto
+            if current_conf_version in ('12', '13') \
+                    and conf['vnet_default_interface'] == 'none':
+                conf['vnet_default_interface'] = 'auto'
 
         # Version 14 keys
         if not conf.get('allow_tun'):
@@ -595,7 +601,7 @@ class IOCConfiguration(IOCZFS):
             'vnet1_mac': 'none',
             'vnet2_mac': 'none',
             'vnet3_mac': 'none',
-            'vnet_default_interface': 'none',
+            'vnet_default_interface': 'auto',
             'devfs_ruleset': '4',
             'exec_start': '/bin/sh /etc/rc',
             'exec_stop': '/bin/sh /etc/rc.shutdown',
