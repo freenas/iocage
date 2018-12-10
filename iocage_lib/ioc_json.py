@@ -1092,7 +1092,7 @@ class IOCJson(object):
         else:
             # Catch all users migrating from old prop value of none, which
             # meant auto
-            if (current_conf_version == '13' or current_conf_version == '12') \
+            if current_conf_version in ('12', '13') \
                     and conf['vnet_default_interface'] == 'none':
                 conf['vnet_default_interface'] = 'auto'
 
