@@ -68,7 +68,7 @@ class IOCList(object):
         else:
             ds = self.zfs.get_dataset(f"{self.pool}/iocage/jails").children
 
-        if self.list_type == "all" or self.list_type == 'basejail':
+        if self.list_type in ('all', 'basejail', 'template'):
             if self.quick:
                 _all = self.list_all_quick(ds)
             else:
@@ -95,10 +95,6 @@ class IOCList(object):
             bases = self.list_bases(ds)
 
             return bases
-        elif self.list_type == "template":
-            templates = self.list_all(ds)
-
-            return templates
 
     def list_all_quick(self, jails):
         """Returns a table of jails with minimal processing"""
