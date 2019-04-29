@@ -26,6 +26,8 @@ import click
 import iocage_lib.ioc_common as ioc_common
 import iocage_lib.iocage as ioc
 
+import os
+
 __rootcmd__ = True
 
 
@@ -97,6 +99,8 @@ def validate_count(ctx, param, value):
               help="Lists only official plugins.")
 @click.option("--branch", default=None,
               help="Select a different plugin branch (for development)")
+@click.option('--proxy', '-S', default=None,
+              help='Provide proxy to use for creating jail')
 def cli(**kwargs):
     """CLI command that calls fetch_release()"""
     release = kwargs.get("release", None)
@@ -107,6 +111,13 @@ def cli(**kwargs):
                 "level": "EXCEPTION",
                 "message": "Please supply a --name for plugin-file."
             })
+
+    proxy = kwargs.pop('proxy')
+    if proxy:
+        os.environ.update({
+            'http_proxy': proxy,
+            'https_proxy': proxy
+        })
 
     if release is not None:
         if release.lower() == "latest":

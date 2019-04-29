@@ -541,7 +541,13 @@ fingerprint: {fingerprint}
             ip = f"{out.splitlines()[2].split()[1]}"
             os.environ["IOCAGE_PLUGIN_IP"] = ip
 
-        plugin_env = {"IOCAGE_PLUGIN_IP": ip.rsplit(',')[0]}
+        plugin_env = {
+            **{
+                k: os.environ.get(k)
+                for k in ['http_proxy', 'https_proxy'] if os.environ.get(k)
+            },
+            'IOCAGE_PLUGIN_IP': ip.rsplit(',')[0]
+        }
 
         # We need to pipe from tar to the root of the jail.
 

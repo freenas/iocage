@@ -81,9 +81,11 @@ def validate_count(ctx, param, value):
                    " 36.")
 @click.option("--force", "-f", is_flag=True, default=False,
               help="Skip the interactive question.")
+@click.option('--proxy', '-S', default=None,
+              help='Provide proxy to use for creating jail')
 @click.argument("props", nargs=-1)
 def cli(release, template, count, props, pkglist, basejail, thickjail, empty,
-        short, name, _uuid, force):
+        short, name, _uuid, force, proxy):
 
     if name:
         # noinspection Annotator
@@ -97,6 +99,12 @@ def cli(release, template, count, props, pkglist, basejail, thickjail, empty,
 
         # At this point we don't care
         _uuid = name
+
+    if proxy:
+        os.environ.update({
+            'http_proxy': proxy,
+            'https_proxy': proxy
+        })
 
     if release and "=" in release:
         ioc_common.logit({

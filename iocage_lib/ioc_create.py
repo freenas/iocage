@@ -716,7 +716,13 @@ class IOCCreate(object):
                     _callback=self.callback)
 
         # We will have mismatched ABI errors from earlier, this is to be safe.
-        pkg_env = {"ASSUME_ALWAYS_YES": "yes"}
+        pkg_env = {
+            **{
+                k: os.environ.get(k)
+                for k in ['http_proxy', 'https_proxy'] if os.environ.get(k)
+            },
+            'ASSUME_ALWAYS_YES': 'yes'
+        }
         cmd = ("/usr/local/sbin/pkg-static", "upgrade", "-f", "-q", "-y")
         pkg_upgrade, pkgup_stderr, pkgup_err = iocage_lib.ioc_exec.IOCExec(
             cmd, jail_uuid, location, plugin=self.plugin,
