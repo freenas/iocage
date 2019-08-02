@@ -1553,6 +1553,8 @@ class IOCStart(object):
                 line = line.rstrip()
                 if line.startswith('rdr') and ip4_addr not in line:
                     rules.append(line)
+                if line.startswith('nat') and nat_network not in line:
+                    rules.append(line)
 
             f.seek(0)
             for rule in rules:
