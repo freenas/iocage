@@ -1300,6 +1300,12 @@ class IOCJson(IOCConfiguration):
         'nat'
     ]
 
+    default_only_props = [
+        'nat_prefix',
+        'nat_interface',
+        'nat_backend',
+    ]
+
     def __init__(self,
                  location="",
                  silent=False,
@@ -2124,9 +2130,7 @@ class IOCJson(IOCConfiguration):
             "reservation": "none",
         }
 
-        if key in (
-            'nat_prefix', 'nat_interface', 'nat_backend'
-        ):
+        if key in self.default_only_props:
             if not default:
                 iocage_lib.ioc_common.logit(
                     {
