@@ -603,6 +603,11 @@ class IOCStart(object):
                 }
                 gw_addresses = iocage_lib.ioc_common.default_gateway_addresses()
                 if gw_addresses:
+                    # We give preference to any CARP address we might have on the default gateway
+                    # so we look for them first and then if we are unable to find any, we default to the
+                    # first one present on the gateway
+                    # Also CARP ip is going to be /32, hence the addr == broadcast check
+                    gw_addresses = [d for d in gw_addresses if d['addr'] == d['broadcast']] or gw_addresses
                     pre_start_env.update({
                         'EXT_HOST': gw_addresses[0]['addr'],
                         'EXT_BCAST': gw_addresses[0]['broadcast'],
@@ -662,6 +667,7 @@ class IOCStart(object):
                         f.write(f'NAT_FORWARDS={nat_forwards}\n')
                     gw_addresses = iocage_lib.ioc_common.default_gateway_addresses()
                     if gw_addresses:
+                        gw_addresses = [d for d in gw_addresses if d['addr'] == d['broadcast']] or gw_addresses
                         f.write(f'HOST_ADDRESS={gw_addresses[0]["addr"]}\n')
                         f.write(f'HOST_ADDRESS_BCAST={gw_addresses[0]["broadcast"]}\n')
             except Exception as e:
