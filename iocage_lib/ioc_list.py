@@ -431,7 +431,7 @@ class IOCList(object):
                                         f['addr']
                                         for f in netifaces.ifaddresses(
                                             default_gateways['ipv6']['interface'] if nat_iface == 'none' else nat_iface
-                                        )[netifaces.AF_INET6]
+                                        ).get(netifaces.AF_INET6, [])
                                     ]
                             if all_ips:
                                 all_ips = [all_ips[0]]
