@@ -1492,12 +1492,12 @@ class IOCStart(object):
             stdout=su.PIPE
         )
 
-    def get_default_interface(self):
+    def get_default_interface(self, raise_exception=True):
         if self.host_gateways['ipv4']['interface']:
             return self.host_gateways['ipv4']['interface']
         elif self.host_gateways['ipv6']['interface']:
             return self.host_gateways['ipv6']['interface']
-        else:
+        elif raise_exception:
             iocage_lib.ioc_common.logit(
                 {
                     'level': 'EXCEPTION',
@@ -1703,7 +1703,7 @@ class IOCStart(object):
 
     def __add_nat_ipfw__(self, nat_interface, forwards):
         carp_ip = None
-        if self.get_default_interface() == nat_interface:
+        if self.get_default_interface(raise_exception=False) == nat_interface:
             gw_addresses = [a for a in iocage_lib.ioc_common.default_gateway_addresses() if a['carp_ip']]
             if gw_addresses:
                 # We have a CARP IP, we would be using that for writing out ipfw rules
