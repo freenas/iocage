@@ -607,9 +607,9 @@ class IOCStart(object):
                     # so we look for them first and then if we are unable to find any, we default to the
                     # first one present on the gateway
                     # Also CARP ip is going to be /32, hence the addr == broadcast check
-                    gw_addresses = [d for d in gw_addresses if d['addr'] == d['broadcast']] or gw_addresses
+                    ext_host = [d for d in gw_addresses if d['carp_ip']] or gw_addresses
                     pre_start_env.update({
-                        'EXT_HOST': gw_addresses[0]['addr'],
+                        'EXT_HOST': ext_host[0]['addr'],
                         'EXT_BCAST': gw_addresses[0]['broadcast'],
                     })
 
@@ -654,6 +654,7 @@ class IOCStart(object):
             )
 
         if self.conf['type'] == 'pluginv2':
+
             try:
                 with open(os.path.join(self.path, 'root/etc/iocage-env'), 'w') as f:
                     if wants_dhcp:
@@ -667,8 +668,8 @@ class IOCStart(object):
                         f.write(f'NAT_FORWARDS={nat_forwards}\n')
                     gw_addresses = iocage_lib.ioc_common.default_gateway_addresses()
                     if gw_addresses:
-                        gw_addresses = [d for d in gw_addresses if d['addr'] == d['broadcast']] or gw_addresses
-                        f.write(f'HOST_ADDRESS={gw_addresses[0]["addr"]}\n')
+                        ext_host = [d for d in gw_addresses if d['carp_ip']] or gw_addresses
+                        f.write(f'HOST_ADDRESS={ext_host[0]["addr"]}\n')
                         f.write(f'HOST_ADDRESS_BCAST={gw_addresses[0]["broadcast"]}\n')
             except Exception as e:
                 iocage_lib.ioc_common.logit({

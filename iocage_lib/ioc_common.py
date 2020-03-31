@@ -36,6 +36,7 @@ import datetime as dt
 import re
 import shlex
 import glob
+import netif
 import netifaces
 import concurrent.futures
 import json
@@ -1148,10 +1149,14 @@ def tmp_dataset_checks(_callback, silent):
 
 def default_gateway_addresses():
     default_gw_iface = get_host_gateways()['ipv4']['interface']
+    addresses = []
     if default_gw_iface:
-        gw_addresses = netifaces.ifaddresses(
-            default_gw_iface
-        )[netifaces.AF_INET]
-        if gw_addresses:
-            return gw_addresses
-    return []
+        iface = netif.get_interface(default_gw_iface)
+        for addr in filter(lambda i: isinstance(i.address, ipaddress.IPv4Address), iface.addresses):
+            addresses.append({
+                'addr': addr.address.exploded,
+                'broadcast': addr.broadcast.exploded,
+                'carp_ip': bool(addr.vhid),
+            })
+
+    return addresses
