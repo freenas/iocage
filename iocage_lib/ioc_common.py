@@ -1151,12 +1151,22 @@ def default_gateway_addresses():
     default_gw_iface = get_host_gateways()['ipv4']['interface']
     addresses = []
     if default_gw_iface:
-        iface = netif.get_interface(default_gw_iface)
-        for addr in filter(lambda i: isinstance(i.address, ipaddress.IPv4Address), iface.addresses):
-            addresses.append({
-                'addr': addr.address.exploded,
-                'broadcast': addr.broadcast.exploded,
-                'carp_ip': bool(addr.vhid),
-            })
+        addresses.extend(iface_addresses(default_gw_iface))
 
+    return addresses
+
+
+def iface_addresses(iface_name):
+    addresses = []
+    try:
+        iface = netif.get_interface(iface_name)
+    except KeyError:
+        return addresses
+
+    for addr in filter(lambda i: isinstance(i.address, ipaddress.IPv4Address), iface.addresses):
+        addresses.append({
+            'addr': addr.address.exploded,
+            'broadcast': addr.broadcast.exploded,
+            'carp_ip': bool(addr.vhid),
+        })
     return addresses

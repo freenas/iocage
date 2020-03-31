@@ -23,6 +23,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """List all datasets by type"""
 import json
+import netif
 import netifaces
 import os
 import re
@@ -408,17 +409,30 @@ class IOCList(object):
                             # would mean applying the firewall rules again
                             # on ip changes
                             nat_iface = conf.get('nat_interface', 'none')
-                            all_ips = [
-                                f['addr']
-                                for k in default_gateways
-                                if default_gateways[k]['interface']
-                                for f in netifaces.ifaddresses(
-                                    default_gateways[k]['interface']
-                                    if nat_iface == 'none' else nat_iface
-                                )[netifaces.AF_INET
-                                    if k == 'ipv4' else netifaces.AF_INET6]
-                            ] if nat_iface in netifaces.interfaces() \
-                                 or nat_iface == 'none' else []
+
+                            all_ips = []
+                            ipv4_interface = None
+                            if nat_iface == 'none' and default_gateways['ipv4']['interface']:
+                                ipv4_interface = default_gateways['ipv4']['interface']
+                            elif nat_iface in netifaces.interfaces():
+                                ipv4_interface = nat_iface
+
+                            if ipv4_interface:
+                                all_ips.extend(iocage_lib.ioc_common.iface_addresses(ipv4_interface))
+
+                            if all_ips:
+                                all_ips = [i['addr'] for i in sorted(all_ips, key=lambda o: not o['carp_ip'])]
+                            elif nat_iface == 'none' or nat_iface in netifaces.interfaces():
+                                if nat_iface == 'none' and not default_gateways['ipv6']['interface']:
+                                    all_ips = []
+                                else:
+                                    # We did not get a ipv4 address, falling back to ipv6
+                                    all_ips = [
+                                        f['addr']
+                                        for f in netifaces.ifaddresses(
+                                            default_gateways['ipv6']['interface'] if nat_iface == 'none' else nat_iface
+                                        )[netifaces.AF_INET6]
+                                    ]
                             if all_ips:
                                 all_ips = [all_ips[0]]
 
