@@ -1204,7 +1204,7 @@ fingerprint: {fingerprint}
                     f"{path}/root",
                     preserve_symlinks=True)
             except distutils.errors.DistutilsFileError as e:
-                # Copy tree should succeed if the overlay folder exist
+                # Copy tree should succeed if the overlay folder exists
                 iocage_lib.ioc_common.logit(
                     {
                         'level': 'EXCEPTION',
