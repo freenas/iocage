@@ -1195,14 +1195,16 @@ fingerprint: {fingerprint}
 
         if os.path.isdir(f"{path}/plugin/overlay/"):
             try:
-                # Quickfix for distutils cache bug which made re-installing plugins fail with overlay copy
+                # Quickfix for distutils cache bug which made re-installing
+                # plugins fail with coping overlay folder
                 distutils.dir_util._path_created = {}
+
                 distutils.dir_util.copy_tree(
                     f"{path}/plugin/overlay/",
                     f"{path}/root",
                     preserve_symlinks=True)
             except distutils.errors.DistutilsFileError as e:
-                # Log exception as this should succeed if the overlay folder exist
+                # Copy tree should succeed if the overlay folder exist
                 iocage_lib.ioc_common.logit(
                     {
                         'level': 'EXCEPTION',
