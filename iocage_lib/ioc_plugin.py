@@ -1195,8 +1195,8 @@ fingerprint: {fingerprint}
 
         if os.path.isdir(f"{path}/plugin/overlay/"):
             try:
-                # Quickfix for distutils cache bug which made re-installing
-                # plugins fail with coping overlay folder
+                # Quickfix for distutils cache bug making re-installed
+                # plugins with same name fail to copy the overlay folder
                 distutils.dir_util._path_created = {}
 
                 distutils.dir_util.copy_tree(
