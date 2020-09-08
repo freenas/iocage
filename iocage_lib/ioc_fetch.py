@@ -87,19 +87,26 @@ class IOCFetch:
         self._file = _file
         self.verify = verify
         self.hardened = hardened
-        self.files = files
-        self.files_left = list(files)
-        self.update = update
-        self.eol = eol
-        self.silent = silent
-        self.callback = callback
-        self.zpool = Pool(self.pool)
 
         if hardened:
             if release:
                 self.release = f"{self.release[:2]}-stable".upper()
             else:
                 self.release = release
+
+        if self.arch == 'arm64':
+            self.files = ('MANIFEST', 'base.txz', 'src.txz')
+            if self.release is None:
+                self.release = os.uname()[2]
+        else:
+            self.files = files
+
+        self.files_left = list(files)
+        self.update = update
+        self.eol = eol
+        self.silent = silent
+        self.callback = callback
+        self.zpool = Pool(self.pool)
 
         if not verify:
             # The user likely knows this already.
@@ -187,8 +194,14 @@ class IOCFetch:
 
                 if "-STABLE" in self.release:
                     # Custom HardenedBSD server
-                    self.hardened = True
+                    if self.arch == 'arm64':
+                        self.hardened = False
+                    else:
+                        self.hardened = True
 
+                    return self.release
+
+                if "-CURRENT" in self.release:
                     return self.release
 
                 releases.index(self.release)
@@ -299,6 +312,12 @@ class IOCFetch:
             - XX.X-RELEASE
             - XX.X-RELEASE
         """
+
+        if self.release and "-STABLE" in self.release:
+            self.root_dir = f"ftp/snapshots/{self.arch}"
+
+        if self.release and "-CURRENT" in self.release:
+            self.root_dir = f"ftp/snapshots/{self.arch}"
 
         if self.hardened:
             if self.server == "download.freebsd.org":
@@ -472,7 +491,7 @@ class IOCFetch:
             if missing_files:
                 missing_attempt += 1
 
-        if not self.hardened and self.update:
+        if not self.hardened and not self.arch == 'arm64' and self.update:
             self.fetch_update()
 
     def __fetch_exists__(self):
@@ -680,6 +699,10 @@ class IOCFetch:
                     _file = f"{self.server}/{self.root_dir}/" \
                         f"{self.release}/{f}"
 
+                if self.arch == 'arm64':
+                    if f == "lib32.txz":
+                        continue
+                                
                 if self.auth == "basic":
                     r = requests.get(
                         _file,
